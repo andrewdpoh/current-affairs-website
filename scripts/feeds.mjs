@@ -119,6 +119,26 @@ export const FEEDS = [
     section: 'geopolitics',
     weight: 1.1,
   },
+  {
+    id: 'foreign-affairs',
+    name: 'Foreign Affairs',
+    url: 'https://www.foreignaffairs.com/rss.xml',
+    section: 'geopolitics',
+    weight: 1.2,
+  },
+  {
+    id: 'economist-intl',
+    name: 'The Economist',
+    url: 'https://www.economist.com/international/rss.xml',
+    section: 'geopolitics',
+    weight: 1.2,
+  },
+  {
+    id: 'responsible-statecraft',
+    name: 'Responsible Statecraft',
+    url: 'https://responsiblestatecraft.org/feeds/feed.rss',
+    section: 'geopolitics',
+  },
 
   // -------------------------------------------------------------- defense
   {

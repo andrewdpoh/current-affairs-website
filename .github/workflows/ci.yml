@@ -31,18 +31,3 @@ jobs:
         # Never fails the build on a single dead feed — publishers change URLs
         # and that must not block unrelated work. Read the log to see which.
         run: npm run fetch -- --dry-run
-
-      # TEMPORARY: backfilling the Analysis section after dropping Lawfare/CFR.
-      - name: Probe candidate replacements
-        run: |
-          npm run probe -- \
-            https://www.brookings.edu/feed/ \
-            https://carnegieendowment.org/rss/publications.xml \
-            https://responsiblestatecraft.org/feed/ \
-            https://thebulletin.org/feed/ \
-            https://www.rand.org/news/press.xml \
-            https://www.chathamhouse.org/rss/publications \
-            https://www.iiss.org/rss/analysis \
-            https://foreignaffairs.com/rss.xml \
-            https://www.economist.com/international/rss.xml \
-            https://www.france24.com/en/rss
