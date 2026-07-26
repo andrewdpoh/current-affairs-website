@@ -1,0 +1,90 @@
+name: Update brief
+
+# Fetches every feed, merges the result into the stored 7-day window, commits
+# the data back to the repo, and deploys the site to GitHub Pages.
+#
+# The commit is what makes the rolling window possible: most feeds only expose
+# the last day or two, so the repo itself acts as the database.
+
+on:
+  schedule:
+    # Every three hours. GitHub's scheduler is best-effort and can run late
+    # under load; running 8x/day means a delay is never noticeable.
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    # A content-only change to the site should redeploy; a data commit from
+    # this workflow must not (GITHUB_TOKEN commits don't retrigger anyway).
+    paths:
+      - 'public/**'
+      - 'scripts/**'
+      - '.github/workflows/update-news.yml'
+
+# Least privilege: the job needs to push a data commit and publish Pages.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Never let a scheduled run and a manual run fight over the same commit.
+concurrency:
+  group: update-brief
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No dependencies to install — the pipeline is plain Node.
+      - name: Run tests
+        run: npm test
+
+      - name: Fetch feeds
+        run: npm run fetch
+
+      - name: Commit updated data
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet -- public/data/news.json; then
+            echo "No change to the brief."
+          else
+            git add public/data/news.json
+            git commit -m "data: refresh brief ($(date -u '+%Y-%m-%d %H:%M UTC'))"
+            # A concurrent run may have pushed first; rebase rather than fail.
+            for attempt in 1 2 3; do
+              if git push; then exit 0; fi
+              echo "Push failed (attempt $attempt), rebasing…"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+              sleep $(( attempt * 4 ))
+            done
+            echo "Could not push updated data after 3 attempts." >&2
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,18 @@
+{
+  "name": "current-affairs-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A self-updating daily brief: world, geopolitics, defense and cyber headlines from the past week.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch-news.mjs",
+    "test": "node scripts/test.mjs",
+    "seed": "node scripts/dev-seed.mjs",
+    "seed:clear": "node scripts/dev-seed.mjs --clear",
+    "dev": "node scripts/serve.mjs"
+  }
+}

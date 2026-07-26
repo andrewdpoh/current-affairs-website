@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Daily Brief">
+  <rect width="64" height="64" rx="14" fill="#0f1115"/>
+  <rect x="12" y="14" width="40" height="36" rx="4" fill="none" stroke="#7aa2f7" stroke-width="3"/>
+  <path d="M19 24h18M19 32h26M19 40h20" stroke="#e7e9ee" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="45" cy="24" r="4" fill="#e0af68"/>
+</svg>

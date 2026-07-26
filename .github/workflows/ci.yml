@@ -1,0 +1,33 @@
+name: CI
+
+# Runs on every branch and pull request. Verifies the parsing logic offline and
+# checks that the registered feeds are actually reachable — feed rot is the
+# most likely way this site quietly degrades, so it is worth a standing check.
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Unit tests (offline)
+        run: npm test
+
+      - name: Feed reachability check
+        # Never fails the build on a single dead feed — publishers change URLs
+        # and that must not block unrelated work. Read the log to see which.
+        run: npm run fetch -- --dry-run

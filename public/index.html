@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Daily Brief — world, defense &amp; cyber</title>
+    <meta
+      name="description"
+      content="A daily current-affairs brief: world news, geopolitics, defense and cybersecurity from the past week, with everything you have already read filed into history."
+    />
+
+    <!--
+      Everything is same-origin: no CDNs, no fonts, no analytics, no third-party
+      requests of any kind. The only outbound navigation is you clicking through
+      to a source. This also means nothing about your reading leaves the device.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0f1115" />
+
+    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#stories">Skip to stories</a>
+
+    <header class="masthead">
+      <div class="masthead__bar">
+        <div class="masthead__identity">
+          <h1 class="masthead__title">Daily Brief</h1>
+          <p class="masthead__date" id="masthead-date"></p>
+        </div>
+
+        <div class="masthead__actions">
+          <div class="search">
+            <svg class="search__icon" viewBox="0 0 20 20" aria-hidden="true">
+              <circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M13.5 13.5 18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <input
+              type="search"
+              id="search"
+              class="search__input"
+              placeholder="Search headlines…"
+              autocomplete="off"
+              aria-label="Search headlines"
+            />
+            <kbd class="search__hint">/</kbd>
+          </div>
+
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch theme">
+            <svg viewBox="0 0 20 20" aria-hidden="true" class="icon-sun">
+              <circle cx="10" cy="10" r="4" fill="currentColor" />
+              <path
+                d="M10 1v2M10 17v2M1 10h2M17 10h2M3.9 3.9l1.4 1.4M14.7 14.7l1.4 1.4M16.1 3.9l-1.4 1.4M5.3 14.7l-1.4 1.4"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <svg viewBox="0 0 20 20" aria-hidden="true" class="icon-moon">
+              <path
+                d="M16 12.3A7 7 0 0 1 7.7 4a7 7 0 1 0 8.3 8.3Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          <button class="icon-btn" id="settings-toggle" type="button" aria-label="Settings" aria-expanded="false">
+            <!-- Sliders, not a gear: a radiating gear reads as a second sun
+                 next to the theme toggle at this size. -->
+            <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M2.5 6.5h8M16 6.5h1.5M2.5 13.5h1.5M9 13.5h8.5" stroke-linecap="round" />
+              <circle cx="13" cy="6.5" r="2.2" />
+              <circle cx="6.5" cy="13.5" r="2.2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <nav class="views" aria-label="Views">
+        <button class="view-tab is-active" data-view="brief" type="button">
+          Brief <span class="badge" id="count-brief">0</span>
+        </button>
+        <button class="view-tab" data-view="history" type="button">
+          History <span class="badge" id="count-history">0</span>
+        </button>
+        <button class="view-tab" data-view="all" type="button">
+          All <span class="badge" id="count-all">0</span>
+        </button>
+      </nav>
+
+      <div class="filters" id="filters">
+        <div class="filters__row" id="section-filters" role="group" aria-label="Filter by section"></div>
+        <div class="filters__row filters__row--tags" id="tag-filters" role="group" aria-label="Filter by topic"></div>
+      </div>
+    </header>
+
+    <main id="stories" class="stories" tabindex="-1">
+      <div class="state" id="state-loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading the brief…</p>
+      </div>
+
+      <div class="state is-hidden" id="state-error" role="alert">
+        <h2>Could not load the brief</h2>
+        <p id="error-detail"></p>
+        <button class="btn" id="retry" type="button">Try again</button>
+      </div>
+
+      <div class="state is-hidden" id="state-empty">
+        <div class="state__mark" aria-hidden="true">✓</div>
+        <h2 id="empty-title">You're all caught up</h2>
+        <p id="empty-body"></p>
+        <div class="state__actions">
+          <button class="btn btn--ghost" id="empty-view-all" type="button">Show everything from this week</button>
+        </div>
+      </div>
+
+      <div id="feed" class="feed"></div>
+    </main>
+
+    <footer class="colophon">
+      <p id="colophon-status"></p>
+      <p class="colophon__note">
+        Headlines and summaries are excerpts from each publisher's own feed; follow the link to read
+        the full article at the source. Your reading history is stored only in this browser.
+      </p>
+    </footer>
+
+    <!-- Settings drawer -->
+    <div class="drawer" id="settings" hidden>
+      <div class="drawer__scrim" data-close-settings></div>
+      <div class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="drawer__head">
+          <h2 id="settings-title">Settings</h2>
+          <button class="icon-btn" type="button" data-close-settings aria-label="Close settings">
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="drawer__body">
+          <section class="setting">
+            <h3>Reading</h3>
+            <label class="switch">
+              <input type="checkbox" id="opt-autoread" />
+              <span>Mark a story read when I open it</span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" id="opt-compact" />
+              <span>Compact layout</span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" id="opt-group-dupes" />
+              <span>Group duplicate coverage from multiple outlets</span>
+            </label>
+          </section>
+
+          <section class="setting">
+            <h3>Sources</h3>
+            <p class="setting__hint">Untick a source to hide it from the brief.</p>
+            <div id="source-toggles" class="source-toggles"></div>
+          </section>
+
+          <section class="setting">
+            <h3>Your data</h3>
+            <p class="setting__hint">
+              Read state lives in this browser's local storage only. Export it to move to another
+              device or keep a backup.
+            </p>
+            <div class="setting__buttons">
+              <button class="btn btn--ghost" id="export-data" type="button">Export</button>
+              <button class="btn btn--ghost" id="import-data" type="button">Import</button>
+              <button class="btn btn--danger" id="clear-data" type="button">Clear history</button>
+            </div>
+            <input type="file" id="import-file" accept="application/json" hidden />
+            <p class="setting__hint" id="storage-usage"></p>
+          </section>
+
+          <section class="setting">
+            <h3>Source health</h3>
+            <p class="setting__hint">Feeds that failed on the most recent update.</p>
+            <div id="health-report" class="health"></div>
+          </section>
+
+          <section class="setting">
+            <h3>Keyboard</h3>
+            <dl class="shortcuts">
+              <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>Next / previous story</dd></div>
+              <div><dt><kbd>o</kbd></dt><dd>Open the selected story</dd></div>
+              <div><dt><kbd>m</kbd></dt><dd>Toggle read</dd></div>
+              <div><dt><kbd>a</kbd></dt><dd>Mark the visible section read</dd></div>
+              <div><dt><kbd>u</kbd></dt><dd>Undo the last mark-read</dd></div>
+              <div><dt><kbd>/</kbd></dt><dd>Search</dd></div>
+              <div><dt><kbd>g</kbd> <kbd>b</kbd></dt><dd>Go to Brief</dd></div>
+              <div><dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Go to History</dd></div>
+              <div><dt><kbd>?</kbd></dt><dd>Open settings</dd></div>
+            </dl>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+      <span id="toast-text"></span>
+      <button class="toast__action" id="toast-action" type="button">Undo</button>
+    </div>
+
+    <script src="assets/app.js" type="module"></script>
+  </body>
+</html>
