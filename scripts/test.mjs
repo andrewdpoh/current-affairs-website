@@ -12,6 +12,9 @@ import {
   cleanSummary,
   classify,
   clusterItems,
+  isNoise,
+  isRoutine,
+  scoreItem,
   titleTokens,
   truncate,
 } from './lib/normalize.mjs';
@@ -217,6 +220,88 @@ test('clusterItems keeps genuinely different stories apart', () => {
 
 test('clusterItems handles an empty input', () => {
   assert.deepEqual(clusterItems([]), []);
+});
+
+console.log('\nranking');
+
+test('stripHtml removes markup that arrives entity-encoded', () => {
+  // Straits Times, Guardian and CISA all publish &lt;p&gt; rather than <p>.
+  // Stripping before decoding left the tags on the page as literal text.
+  assert.equal(
+    stripHtml('&lt;p&gt;BUCHAREST - A drone was shot down.&lt;/p&gt;'),
+    'BUCHAREST - A drone was shot down.'
+  );
+  assert.equal(stripHtml('<p>Plain markup still goes.</p>'), 'Plain markup still goes.');
+  assert.equal(stripHtml('&amp;lt;p&amp;gt;Double-encoded&amp;lt;/p&amp;gt;'), 'Double-encoded');
+});
+
+test('stripHtml still drops script bodies when they are encoded', () => {
+  assert.equal(stripHtml('&lt;script&gt;alert(1)&lt;/script&gt;ok'), 'ok');
+});
+
+test('cleanSummary unescapes JSON-escaped quotes', () => {
+  assert.equal(
+    cleanSummary('The president called it \\"intolerable\\".', 'Drone downed'),
+    'The president called it "intolerable".'
+  );
+});
+
+test('isNoise flags sport and entertainment', () => {
+  assert.ok(isNoise({ title: 'Tour de France final stage shortened', summary: '' }));
+  assert.ok(isNoise({ title: 'Casemiro makes Inter Miami debut', summary: 'MLS transfer' }));
+  assert.ok(!isNoise({ title: 'Romania shoots down Russian drone', summary: '' }));
+});
+
+test('isRoutine flags recurring columns and routine bulletins', () => {
+  assert.ok(isRoutine({ title: 'CISA Adds Two Known Exploited Vulnerabilities to Catalog' }));
+  assert.ok(isRoutine({ title: 'Bunker Talk: Free Fire Zone' }));
+  assert.ok(isRoutine({ title: 'USNI News Western Pacific Pulse: July 24, 2026' }));
+  assert.ok(!isRoutine({ title: 'Ransomware group claims breach of defence contractor' }));
+});
+
+test('isRoutine catches a newsletter whose title looks like a headline', () => {
+  assert.ok(
+    isRoutine({
+      title: 'Global Risks Heating Up',
+      summary: 'Welcome to The Adversarial. Every other week, we will provide expert analysis.',
+    })
+  );
+  assert.ok(!isRoutine({ title: 'Global risks rise', summary: 'Analysts warn of escalation.' }));
+});
+
+test('scoreItem ranks a focus section above equally fresh general news', () => {
+  const now = Date.now();
+  const at = new Date(now - 3_600_000).toISOString();
+  const cyber = scoreItem({ publishedAt: at, section: 'cyber', tags: [] }, 1, 1, now);
+  const world = scoreItem({ publishedAt: at, section: 'world', tags: [] }, 1, 1, now);
+  assert.ok(cyber > world, `expected cyber (${cyber}) above world (${world})`);
+});
+
+test('scoreItem demotes off-topic and routine stories', () => {
+  const now = Date.now();
+  const at = new Date(now - 3_600_000).toISOString();
+  const base = { publishedAt: at, section: 'world', tags: [] };
+  const plain = scoreItem(base, 1, 1, now);
+  assert.ok(scoreItem({ ...base, noise: true }, 1, 1, now) < plain);
+  assert.ok(scoreItem({ ...base, routine: true }, 1, 1, now) < plain);
+});
+
+test('scoreItem never demotes a specialist section for an off-topic word', () => {
+  const now = Date.now();
+  const at = new Date(now - 3_600_000).toISOString();
+  const item = { publishedAt: at, section: 'cyber', tags: [], noise: true };
+  assert.equal(
+    scoreItem(item, 1, 1, now),
+    scoreItem({ ...item, noise: false }, 1, 1, now),
+    'a cyber story mentioning football must not be penalised'
+  );
+});
+
+test('scoreItem lets corroboration outweigh a small recency gap', () => {
+  const now = Date.now();
+  const fresh = { publishedAt: new Date(now - 3_600_000).toISOString(), section: 'world', tags: [] };
+  const older = { publishedAt: new Date(now - 18_000_000).toISOString(), section: 'world', tags: [] };
+  assert.ok(scoreItem(older, 5, 1, now) > scoreItem(fresh, 1, 1, now));
 });
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

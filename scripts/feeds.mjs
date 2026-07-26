@@ -268,10 +268,92 @@ export const FEEDS = [
 
 export const SECTIONS = [
   { id: 'top', label: 'Top Stories' },
+  { id: 'geopolitics', label: 'Geopolitics' },
   { id: 'cyber', label: 'Cyber' },
   { id: 'defense', label: 'Defense' },
-  { id: 'geopolitics', label: 'Analysis' },
   { id: 'world', label: 'World' },
+];
+
+/**
+ * What this brief is *for*, and how strongly. Stories in these sections are
+ * ranked ahead of general coverage, so a thin news day surfaces geopolitics and
+ * cyber rather than padding the top of the page with whatever a wire service
+ * filed most recently.
+ *
+ * Defense sits deliberately lower than the other two. Its feeds are prolific
+ * and publish a lot of procurement and fleet-movement detail; weighted equally
+ * it took 11 of the top 20 and squeezed out both of the sections this site is
+ * primarily meant to cover.
+ */
+export const FOCUS_WEIGHTS = { geopolitics: 1, cyber: 1, defense: 0.55 };
+export const FOCUS_SECTIONS = new Set(Object.keys(FOCUS_WEIGHTS));
+
+/**
+ * On-topic but not headline material: recurring columns, weekly round-ups,
+ * podcasts, and the routine advisory bulletins that specialist feeds emit daily.
+ * "CISA Adds Two Known Exploited Vulnerabilities to Catalog" is worth having and
+ * worth finding; it is not worth the top of the page every single day.
+ *
+ * Unlike NOISE_RULES this applies inside the focus sections too, because that is
+ * exactly where these formats occur.
+ */
+export const ROUTINE_RULES = [
+  /\b(bunker talk|open thread|mailbag|reader survey|letters to the editor)\b/i,
+  /\b(week in review|weekly (roundup|recap|digest|wrap|update)|this week in|week ahead|morning brief|daily (brief|digest|roundup))\b/i,
+  /\b(podcast|episode \d+|webinar|newsletter|transcript)\b/i,
+  /\bpulse:/i,
+  /\badds?\b.{0,24}\bknown exploited vulnerabilit(y|ies)\b/i,
+  /\breleases?\b.{0,20}\b(ics )?(security )?advisor(y|ies)\b/i,
+  /\b(photos?|in pictures|video) of the (day|week)\b/i,
+];
+
+/**
+ * The same idea, matched against the summary, for recurring formats whose titles
+ * give nothing away — a newsletter called "Global Risks Heating Up" or a quiz
+ * called "What in the World?" both read as headlines until you see the blurb.
+ *
+ * Kept separate and deliberately narrow: matching general prose against the
+ * summary is how you accidentally demote real coverage.
+ */
+export const ROUTINE_SUMMARY_RULES = [
+  /\bwelcome to\b[^.]{2,40}\.\s*(every (other )?week|each week|twice a month)/i,
+  /\btest yourself on the week\b/i,
+  /\bsign up (here |below )?(to|for) (receive|get) /i,
+  /\bsubscribe to\b[^.]{2,40}\bnewsletter\b/i,
+  /\bin this (week's|edition of)\b/i,
+];
+
+/** Tags that mark a story as geopolitically substantive rather than incidental. */
+export const GEO_TAGS = new Set([
+  'ukraine',
+  'russia',
+  'china',
+  'middle-east',
+  'indo-pacific',
+  'europe',
+  'economy',
+]);
+
+/**
+ * Real news, but not what this site is for: sport, entertainment, lifestyle,
+ * and rolling live-blogs that re-publish the same URL all day.
+ *
+ * These only *demote*. A story that several outlets carry, or that also matches
+ * a cyber or geopolitics rule, still outranks the penalty — so an attack at a
+ * stadium is not buried for containing the word "match". Never turn this into
+ * an exclusion list: the failure mode of a false positive then goes from
+ * "ranked lower" to "you never saw it".
+ */
+export const NOISE_RULES = [
+  /\b(football|soccer|cricket|tennis|golf|olympics?|world cup|premier league|nba|nfl|formula one|grand prix|tour de france|grand slam|rugby|wimbledon)\b/i,
+  /\b(box office|celebrity|singer|album|film festival|netflix|grammys?|oscars?|baftas?|eurovision|red carpet)\b/i,
+  /\b(royal family|duchess of|duke of)\b/i,
+  /\b(recipe|horoscope|fashion week|dating app|weight loss|travel guide|gift guide|best deals)\b/i,
+  // Governing bodies and leagues are unambiguous; club names are not worth
+  // enumerating and risk colliding with place names.
+  /\b(mls|uefa|fifa|nhl|mlb|atp|wta|ipl|la liga|serie a|bundesliga)\b/i,
+  /\b(transfer window|signs for|final stage|quarter-?finals?|semi-?finals?)\b/i,
+  /\blive (updates?|blog)\b/i,
 ];
 
 /**

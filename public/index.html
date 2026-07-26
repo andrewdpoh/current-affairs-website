@@ -38,6 +38,17 @@
           <p class="masthead__date" id="masthead-date"></p>
         </div>
 
+        <!-- Read stories move to History, so these two tabs partition the week
+             between them: there is no third view that mixes read and unread. -->
+        <nav class="views" aria-label="Views">
+          <button class="view-tab is-active" data-view="all" type="button">
+            All <span class="badge" id="count-all">0</span>
+          </button>
+          <button class="view-tab" data-view="history" type="button">
+            History <span class="badge" id="count-history">0</span>
+          </button>
+        </nav>
+
         <div class="masthead__actions">
           <div class="search">
             <svg class="search__icon" viewBox="0 0 20 20" aria-hidden="true">
@@ -85,21 +96,8 @@
         </div>
       </div>
 
-      <nav class="views" aria-label="Views">
-        <button class="view-tab is-active" data-view="brief" type="button">
-          Brief <span class="badge" id="count-brief">0</span>
-        </button>
-        <button class="view-tab" data-view="history" type="button">
-          History <span class="badge" id="count-history">0</span>
-        </button>
-        <button class="view-tab" data-view="all" type="button">
-          All <span class="badge" id="count-all">0</span>
-        </button>
-      </nav>
-
       <div class="filters" id="filters">
         <div class="filters__row" id="section-filters" role="group" aria-label="Filter by section"></div>
-        <div class="filters__row filters__row--tags" id="tag-filters" role="group" aria-label="Filter by topic"></div>
       </div>
     </header>
 
@@ -201,7 +199,7 @@
               <div><dt><kbd>a</kbd></dt><dd>Mark the visible section read</dd></div>
               <div><dt><kbd>u</kbd></dt><dd>Undo the last mark-read</dd></div>
               <div><dt><kbd>/</kbd></dt><dd>Search</dd></div>
-              <div><dt><kbd>g</kbd> <kbd>b</kbd></dt><dd>Go to Brief</dd></div>
+              <div><dt><kbd>g</kbd> <kbd>a</kbd></dt><dd>Go to All</dd></div>
               <div><dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Go to History</dd></div>
               <div><dt><kbd>?</kbd></dt><dd>Open settings</dd></div>
             </dl>

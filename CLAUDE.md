@@ -50,13 +50,13 @@ items age out of the 7-day window and would otherwise vanish from history.
 | `scripts/lib/xml.mjs` | Hand-rolled RSS/Atom parser. `parseFeed`, `stripHtml`, `decodeEntities`, `parseDate`. |
 | `scripts/lib/normalize.mjs` | `canonicalUrl`, `itemId`, `classify`, `clusterItems`, `scoreItem`, `cleanSummary`. |
 | `public/assets/app.js` | The whole front end. State, rendering, keyboard nav, settings. |
-| `scripts/test.mjs` | 22 offline assertions over parsing and normalizing. No network. |
+| `scripts/test.mjs` | 32 offline assertions over parsing, normalizing and ranking. No network. |
 | `scripts/probe-feeds.mjs` | Hits every feed and reports which are broken. Needs network. |
 
 ## Commands
 
 ```sh
-npm test          # 22 offline assertions — always run before pushing
+npm test          # 32 offline assertions — always run before pushing
 npm run dev       # local server on :8000
 npm run fetch     # real fetch, rewrites public/data/news.json (needs network)
 npm run probe     # check all 33 feeds are alive (needs network)
@@ -78,6 +78,35 @@ In `scripts/lib/normalize.mjs`: the cross-source clustering threshold is Jaccard
 `>= 0.55`. This is deliberately conservative and only catches near-identical
 headlines, not paraphrases — a false merge *hides a distinct story*, which is
 worse than showing two angles on one. Do not lower it without a good reason.
+
+In `public/assets/app.js`: `SECTION_CAPS` is how many stories each section shows
+before a click, and `TOP_QUOTAS` fixes the section mix of Top Stories. Together
+they take the first screen from ~640 cards to ~50.
+
+## Ranking
+
+There is no model here; ranking is arithmetic over four signals in `scoreItem`:
+
+- **Corroboration** (`coverage`) — several independent desks choosing the same
+  story is a free editorial judgement, and it is weighted highest.
+- **Recency** — deliberately *not* dominant. It used to be, which made the page
+  an expensive reverse-chronological list.
+- **Focus** — `FOCUS_WEIGHTS` plus `GEO_TAGS` hits. Defense sits at 0.55 against
+  1.0 for geopolitics and cyber: its feeds are prolific and at equal weight it
+  took 11 of the top 20 and squeezed out the two sections this site is for.
+- **Demotions** — `NOISE_RULES` (sport, entertainment, lifestyle) and
+  `ROUTINE_RULES` / `ROUTINE_SUMMARY_RULES` (recurring columns, round-ups,
+  routine advisory bulletins).
+
+Two things to preserve if you touch this:
+
+- **The demotion lists only reorder; they never exclude.** A false positive then
+  costs a lower rank rather than a story you never saw. Do not convert them into
+  a filter.
+- **Top Stories uses quotas, not a global top-N.** Cyber reporting is usually
+  single-source, so it can never win on corroboration against a wildfire eight
+  wires cover. Quotas make the ranking compete *within* a section, which is the
+  only comparison where corroboration means anything.
 
 ## Feed registry
 

@@ -17,12 +17,24 @@ const UNDO_MS = 8000;
 
 const SECTION_META = {
   top: { label: 'Top Stories', color: 'var(--sec-top)' },
+  geopolitics: { label: 'Geopolitics', color: 'var(--sec-geopolitics)' },
   cyber: { label: 'Cyber', color: 'var(--sec-cyber)' },
   defense: { label: 'Defense', color: 'var(--sec-defense)' },
-  geopolitics: { label: 'Analysis', color: 'var(--sec-geopolitics)' },
   world: { label: 'World', color: 'var(--sec-world)' },
 };
-const SECTION_ORDER = ['top', 'cyber', 'defense', 'geopolitics', 'world'];
+const SECTION_ORDER = ['top', 'geopolitics', 'cyber', 'defense', 'world'];
+
+/**
+ * How many stories a section shows before it needs a click. ~100 items arrive a
+ * day, and an unbounded page buries the good ones — capping is what makes the
+ * ranking matter at all. Nothing is discarded: every section can be expanded,
+ * and a section filter shows it in full.
+ *
+ * `world` is the tightest on purpose. General coverage is the least of what
+ * this site is for, and it is also the largest section by volume.
+ */
+const SECTION_CAPS = { geopolitics: 14, cyber: 14, defense: 10, world: 6 };
+const expandedSections = new Set();
 
 // --------------------------------------------------------------- storage
 
@@ -86,7 +98,7 @@ const state = loadState();
 // ------------------------------------------------------------------ data
 
 let data = { items: [], sources: [], health: [], generatedAt: null, displayCutoff: null };
-let view = 'brief';
+let view = 'all';
 let activeSection = 'all';
 let activeTag = null;
 let query = '';
@@ -164,9 +176,11 @@ function baseItems() {
   if (view === 'history') {
     return state.history.filter(visibleSources);
   }
+  // "All" means everything still outstanding this week. Anything you have read
+  // has moved to History, so the two views partition the window between them.
   const pool = data.items.filter((i) => inWindow(i) && visibleSources(i));
   const deduped = state.prefs.groupDupes ? pool.filter((i) => i.isLead !== false) : pool;
-  return view === 'brief' ? deduped.filter((i) => !clusterIsRead(i)) : deduped;
+  return deduped.filter((i) => !clusterIsRead(i));
 }
 
 function filtered() {
@@ -364,7 +378,7 @@ function buildCard(item, index) {
   return card;
 }
 
-function buildSection(id, items, startIndex) {
+function buildSection(id, items, startIndex, totalAvailable = items.length) {
   const meta = SECTION_META[id] || { label: id, color: 'var(--accent)' };
   const section = el('section', 'section');
   section.style.setProperty('--section-color', meta.color);
@@ -372,13 +386,15 @@ function buildSection(id, items, startIndex) {
   const head = el('div', 'section__head');
   const title = el('h2', 'section__title');
   title.append(document.createTextNode(meta.label));
-  title.append(el('span', 'section__count', String(items.length)));
+  title.append(el('span', 'section__count', String(totalAvailable)));
   head.append(title);
 
-  if (view === 'brief') {
+  if (view === 'all') {
     const mark = el('button', 'section__mark', 'Mark all read');
     mark.type = 'button';
     mark.addEventListener('click', () => {
+      // Marks everything in the section, not just the capped slice on screen —
+      // "mark all read" that left hidden items behind would be a lie.
       markRead(items);
       render();
     });
@@ -386,8 +402,52 @@ function buildSection(id, items, startIndex) {
   }
   section.append(head);
 
-  items.forEach((item, i) => section.append(buildCard(item, startIndex + i)));
+  const grid = el('div', 'section__grid');
+  items.forEach((item, i) => grid.append(buildCard(item, startIndex + i)));
+  section.append(grid);
+
+  const hidden = totalAvailable - items.length;
+  if (hidden > 0) {
+    const more = el('button', 'section__more', `Show ${hidden} more in ${meta.label}`);
+    more.type = 'button';
+    more.addEventListener('click', () => {
+      expandedSections.add(id);
+      render();
+    });
+    section.append(more);
+  }
+
   return section;
+}
+
+/**
+ * Top Stories, with a guaranteed section mix rather than a global top-N.
+ *
+ * A single global ranking does not work here. Cyber reporting is usually
+ * single-source — one outlet breaks a breach and nobody else picks it up — so it
+ * can never compete on cross-source corroboration with a wildfire that eight
+ * wires cover. Ranked globally, cyber took 1 of the top 20 while general news
+ * took 8. Quotas make the ranking compete *within* a section, which is the only
+ * comparison where the corroboration signal means anything.
+ */
+const TOP_QUOTAS = { geopolitics: 2, cyber: 2, defense: 1, world: 1 };
+
+function pickTopStories(bySection) {
+  const picked = [];
+  for (const [section, quota] of Object.entries(TOP_QUOTAS)) {
+    picked.push(...(bySection.get(section) || []).slice(0, quota));
+  }
+  // Backfill from whatever is left if a section was empty, so a quiet day still
+  // shows a full block rather than two lonely stories.
+  if (picked.length < 6) {
+    const seen = new Set(picked.map((i) => i.id));
+    const rest = [...bySection.values()]
+      .flat()
+      .filter((i) => !seen.has(i.id))
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+    picked.push(...rest.slice(0, 6 - picked.length));
+  }
+  return picked.sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
 function render() {
@@ -402,9 +462,8 @@ function render() {
   // -- counts on the view tabs
   const windowItems = data.items.filter((i) => inWindow(i) && visibleSources(i));
   const leads = state.prefs.groupDupes ? windowItems.filter((i) => i.isLead !== false) : windowItems;
-  $('#count-brief').textContent = String(leads.filter((i) => !clusterIsRead(i)).length);
   $('#count-history').textContent = String(state.history.length);
-  $('#count-all').textContent = String(leads.length);
+  $('#count-all').textContent = String(leads.filter((i) => !clusterIsRead(i)).length);
 
   renderFilters(windowItems);
 
@@ -418,13 +477,18 @@ function render() {
     // History reads best strictly chronologically, grouped by the day you read it.
     const sorted = [...items].sort((a, b) => String(b.readAt).localeCompare(String(a.readAt)));
     let currentDay = null;
+    let grid = null;
     sorted.forEach((item) => {
       const label = dayLabel(item.readAt);
       if (label !== currentDay) {
         currentDay = label;
         feed.append(el('div', 'day-divider', label));
+        // A fresh grid per day, so cards column-fill within a day rather than
+        // flowing across a divider.
+        grid = el('div', 'section__grid');
+        feed.append(grid);
       }
-      feed.append(buildCard(item, rendered.length));
+      grid.append(buildCard(item, rendered.length));
       rendered.push(item);
     });
     return;
@@ -443,10 +507,14 @@ function render() {
   const showTop = activeSection === 'all' && !activeTag && !query;
   const topIds = new Set();
   if (showTop) {
-    const top = [...items].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 6);
+    const top = pickTopStories(bySection);
     if (top.length >= 3) {
       top.forEach((i) => topIds.add(i.id));
-      feed.append(buildSection('top', top, rendered.length));
+      const section = buildSection('top', top, rendered.length);
+      // The lead story gets the full width and a display headline; without a
+      // focal point a uniform grid reads as an undifferentiated wall.
+      section.classList.add('section--top');
+      feed.append(section);
       rendered.push(...top);
     }
   }
@@ -455,8 +523,16 @@ function render() {
     if (id === 'top') continue;
     const list = (bySection.get(id) || []).filter((i) => !topIds.has(i.id));
     if (!list.length) continue;
-    feed.append(buildSection(id, list, rendered.length));
-    rendered.push(...list);
+
+    // Caps apply only to the unfiltered page. Once you have picked a section or
+    // typed a search you have asked for that set, so show all of it.
+    const capped =
+      activeSection === 'all' && !activeTag && !query && !expandedSections.has(id)
+        ? list.slice(0, SECTION_CAPS[id] ?? list.length)
+        : list;
+
+    feed.append(buildSection(id, capped, rendered.length, list.length));
+    rendered.push(...capped);
   }
 }
 
@@ -495,8 +571,8 @@ function showEmptyState() {
     ? `You have read everything from the past ${data.windowDays || 7} days. New stories arrive a few times a day.`
     : 'No stories have been collected yet. The first scheduled update will fill this in.';
   showAllBtn.hidden = !total;
-  showAllBtn.textContent = 'Show everything from this week';
-  showAllBtn.onclick = () => setView('all');
+  showAllBtn.textContent = 'Review what you read';
+  showAllBtn.onclick = () => setView('history');
 }
 
 function renderFilters(pool) {
@@ -505,7 +581,7 @@ function renderFilters(pool) {
   sectionRow.textContent = '';
 
   const counts = new Map();
-  const relevant = view === 'history' ? state.history : pool.filter((i) => view === 'all' || !clusterIsRead(i));
+  const relevant = view === 'history' ? state.history : pool.filter((i) => !clusterIsRead(i));
   for (const item of relevant) counts.set(item.section, (counts.get(item.section) || 0) + 1);
 
   const allChip = makeChip('All', activeSection === 'all', () => {
@@ -528,25 +604,17 @@ function renderFilters(pool) {
     sectionRow.append(chip);
   }
 
-  // Topic chips — only the ones that actually appear, most common first.
-  const tagRow = $('#tag-filters');
-  tagRow.textContent = '';
-  const tagCounts = new Map();
-  for (const item of relevant) {
-    for (const tag of item.tags || []) tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-  }
-  const topTags = [...tagCounts.entries()]
-    .filter(([, n]) => n >= 2)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-
-  for (const [tag, n] of topTags) {
-    const chip = makeChip(`#${tag}`, activeTag === tag, () => {
-      activeTag = activeTag === tag ? null : tag;
+  // There is deliberately no standing row of topic chips: with ten of them it
+  // read as a second navigation layer for something almost never used. Tags are
+  // still on every card — clicking one filters, and it appears here as a single
+  // dismissible chip so the filter is always visible and always clearable.
+  if (activeTag) {
+    const chip = makeChip(`#${activeTag} ✕`, true, () => {
+      activeTag = null;
       render();
     });
-    chip.append(el('span', 'chip__count', String(n)));
-    tagRow.append(chip);
+    chip.title = `Stop filtering by #${activeTag}`;
+    sectionRow.append(chip);
   }
 }
 
@@ -564,6 +632,7 @@ function makeChip(label, active, onClick) {
 function setView(next) {
   view = next;
   selectedIndex = -1;
+  expandedSections.clear();
   for (const tab of document.querySelectorAll('.view-tab')) {
     tab.classList.toggle('is-active', tab.dataset.view === next);
   }
@@ -605,7 +674,6 @@ function onKeydown(e) {
 
   if (chordPending === 'g') {
     chordPending = null;
-    if (e.key === 'b') return setView('brief');
     if (e.key === 'h') return setView('history');
     if (e.key === 'a') return setView('all');
     return;
@@ -646,7 +714,7 @@ function onKeydown(e) {
       break;
     }
     case 'a': {
-      if (view !== 'brief' || !rendered.length) break;
+      if (view !== 'all' || !rendered.length) break;
       e.preventDefault();
       markRead(filtered());
       render();

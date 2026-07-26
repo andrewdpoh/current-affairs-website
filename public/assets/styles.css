@@ -9,7 +9,15 @@
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  --measure: 74ch;
+  /* --shell is the page frame; --measure is the reading width of one story.
+     They are separate on purpose: the frame can be wide enough to use a
+     desktop screen while each column stays inside a comfortable line length.
+     A single 74ch column on a 1440px display wasted most of the viewport; a
+     single 140ch column would be worse, because nobody can track a line that
+     long. The answer is columns, not a wider paragraph. */
+  --shell: 1560px;
+  --measure: 68ch;
+  --card-min: 27rem;
   --radius: 10px;
   --radius-sm: 6px;
   --gutter: clamp(1rem, 4vw, 2.5rem);
@@ -174,7 +182,7 @@ button {
 }
 
 .masthead__bar {
-  max-width: var(--measure);
+  max-width: var(--shell);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -297,40 +305,39 @@ button {
 
 /* ---------------------------------------------------------------- views */
 
+/* A segmented control inside the masthead bar rather than its own full-width
+   row. Two tabs did not justify a band across the page. */
 .views {
-  max-width: var(--measure);
-  margin: 0 auto;
   display: flex;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  padding: 0.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
 }
 
 .view-tab {
-  position: relative;
-  padding: 0.5rem 0.1rem 0.7rem;
-  margin-right: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
   background: none;
   border: 0;
+  border-radius: 999px;
   color: var(--text-muted);
-  font-size: 0.87rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s var(--ease);
+  white-space: nowrap;
+  transition: color 0.15s var(--ease), background 0.15s var(--ease);
 }
 .view-tab:hover {
   color: var(--text-secondary);
 }
 .view-tab.is-active {
+  background: var(--bg-elevated);
   color: var(--text);
-}
-.view-tab.is-active::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 2px 2px 0 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .badge {
@@ -354,7 +361,7 @@ button {
 /* -------------------------------------------------------------- filters */
 
 .filters {
-  max-width: var(--measure);
+  max-width: var(--shell);
   margin: 0 auto;
   padding-bottom: 0.7rem;
 }
@@ -409,7 +416,7 @@ button {
 /* --------------------------------------------------------------- feed */
 
 .stories {
-  max-width: var(--measure);
+  max-width: var(--shell);
   margin: 0 auto;
   padding: 1.5rem var(--gutter) 4rem;
 }
@@ -421,11 +428,72 @@ button {
   margin-bottom: 2.4rem;
 }
 
+/* The whole desktop layout is this one rule. auto-fill with a min column width
+   means the column count follows the viewport instead of a breakpoint ladder:
+   one column on a phone, two on a tablet, three or four on a wide monitor, with
+   no media query involved. Each column stays near --measure, so lines never get
+   too long to track. */
+.section__grid {
+  display: grid;
+  /* min() is load-bearing: a bare minmax(27rem, 1fr) forces a 432px track on a
+     375px phone and the page scrolls sideways. Clamping the minimum to 100%
+     collapses it to a single full-width column instead. */
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr));
+  gap: 0.1rem 1.75rem;
+  align-items: start;
+}
+
+.section__more {
+  display: block;
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.6rem;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+.section__more:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Top Stories: the lead runs full width as a display headline, the rest fall
+   into the normal grid. Without a focal point the page reads as a wall. */
+.section--top .section__grid > .card:first-child {
+  grid-column: 1 / -1;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  margin-bottom: 0.6rem;
+}
+.section--top .section__grid > .card:first-child .card__title {
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.16;
+  letter-spacing: -0.022em;
+  max-width: 34ch;
+}
+.section--top .section__grid > .card:first-child .card__summary {
+  font-size: 1.06rem;
+  max-width: var(--measure);
+}
+.section--top .section__grid > .card:first-child:hover {
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: var(--border);
+}
+
 .section__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
+  /* Matches the cards' inner padding so the heading and the headlines below it
+     sit on the same left edge. */
+  padding-inline: 0.9rem;
   padding-bottom: 0.5rem;
   margin-bottom: 0.9rem;
   border-bottom: 1px solid var(--border);
@@ -436,7 +504,7 @@ button {
   align-items: center;
   gap: 0.5rem;
   font-family: var(--serif);
-  font-size: 1.05rem;
+  font-size: 1.18rem;
   letter-spacing: -0.01em;
 }
 .section__title::before {
@@ -476,10 +544,18 @@ button {
 .card {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* minmax(0, …) not 1fr: a bare 1fr will not shrink below the content's
+     min-content width, so one headline containing a long unbreakable token
+     (a URL, a CVE string) widens its track and scrolls the whole page. */
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
   gap: 0 0.75rem;
-  padding: 0.85rem 0.9rem 0.9rem;
-  margin: 0 -0.9rem 0.25rem;
+  padding: 1rem 0.9rem 1.1rem;
+  /* No negative side margins. They used to bleed the hover background into the
+     page gutter, which worked for one centered column but makes every card
+     wider than its grid track — the page then scrolls sideways at any width
+     where the shell is not narrower than the viewport. */
+  margin: 0 0 0.3rem;
   border-radius: var(--radius);
   border: 1px solid transparent;
   transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
@@ -514,12 +590,14 @@ button {
 
 .card__title {
   grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin: 0;
   font-family: var(--serif);
-  font-size: 1.06rem;
+  font-size: 1.24rem;
   font-weight: 600;
-  line-height: 1.34;
-  letter-spacing: -0.011em;
+  line-height: 1.3;
+  letter-spacing: -0.013em;
   color: var(--text);
 }
 
@@ -538,9 +616,11 @@ button {
 
 .card__summary {
   grid-column: 1;
-  margin: 0.35rem 0 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  line-height: 1.52;
   color: var(--text-secondary);
 }
 
@@ -550,8 +630,8 @@ button {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-top: 0.5rem;
-  font-size: 0.74rem;
+  margin-top: 0.55rem;
+  font-size: 0.79rem;
   color: var(--text-muted);
 }
 
@@ -1009,7 +1089,7 @@ kbd {
 /* ------------------------------------------------------------ colophon */
 
 .colophon {
-  max-width: var(--measure);
+  max-width: var(--shell);
   margin: 0 auto;
   padding: 1.5rem var(--gutter) 3rem;
   border-top: 1px solid var(--border);
@@ -1030,6 +1110,15 @@ kbd {
   .masthead__bar {
     flex-wrap: wrap;
     padding-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  /* Identity and tabs share the first line; search and the icon buttons get
+     their own, so the search field is usable at thumb width. */
+  .masthead__identity {
+    order: 1;
+  }
+  .views {
+    order: 2;
   }
   .masthead__actions {
     order: 3;
@@ -1041,6 +1130,13 @@ kbd {
   .search__input {
     width: 100%;
     max-width: none;
+  }
+  .masthead__title {
+    font-size: 1.25rem;
+  }
+  .view-tab {
+    padding: 0.28rem 0.6rem;
+    font-size: 0.8rem;
   }
   .filters__row {
     flex-wrap: nowrap;
@@ -1055,7 +1151,7 @@ kbd {
     display: none;
   }
   .card {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   /* Float the actions instead of giving them a grid row — a hidden row would
      otherwise reserve dead space between every card. */
@@ -1068,8 +1164,14 @@ kbd {
     opacity: 1;
   }
   .card__title {
-    font-size: 1.02rem;
+    font-size: 1.16rem;
     padding-right: 2rem;
+  }
+  .section--top .section__grid > .card:first-child .card__title {
+    font-size: 1.42rem;
+  }
+  .section--top .section__grid > .card:first-child .card__summary {
+    font-size: 1rem;
   }
 }
 

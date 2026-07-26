@@ -68,19 +68,32 @@ export function decodeEntities(input, depth = 0) {
   return out;
 }
 
-/** Strip HTML tags and collapse whitespace. Feed descriptions are full of markup. */
+const TAG_PATTERNS = [
+  // Drop entire script/style blocks including content.
+  [/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' '],
+  // Block-level boundaries become spaces so words don't run together.
+  [/<\/?(p|br|div|li|tr|h[1-6]|blockquote)\b[^>]*>/gi, ' '],
+  [/<[^>]*>/g, ''],
+];
+
+const stripTags = (text) => TAG_PATTERNS.reduce((acc, [re, sub]) => acc.replace(re, sub), text);
+
+/**
+ * Strip HTML tags and collapse whitespace. Feed descriptions are full of markup.
+ *
+ * Decode *before* stripping. Plenty of feeds publish `&lt;p&gt;` rather than
+ * `<p>` — Straits Times, Guardian and CISA all did — and stripping first left
+ * those tags to be decoded into literal text afterwards, so "<p>BUCHAREST…"
+ * rendered on the page. Two rounds, because one decode can expose another layer.
+ */
 export function stripHtml(input) {
   if (!input) return '';
-  return decodeEntities(
-    input
-      // Drop entire script/style blocks including content.
-      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
-      // Block-level boundaries become spaces so words don't run together.
-      .replace(/<\/?(p|br|div|li|tr|h[1-6]|blockquote)\b[^>]*>/gi, ' ')
-      .replace(/<[^>]*>/g, '')
-  )
-    .replace(/\s+/g, ' ')
-    .trim();
+  let text = stripTags(decodeEntities(input));
+  if (text.includes('&')) {
+    const decoded = decodeEntities(text);
+    if (decoded !== text) text = stripTags(decoded);
+  }
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 /**

@@ -21,6 +21,8 @@ import {
   cleanSummary,
   classify,
   clusterItems,
+  isNoise,
+  isRoutine,
   scoreItem,
   truncate,
 } from './lib/normalize.mjs';
@@ -128,6 +130,8 @@ function toItem(entry, feed, nowIso) {
     region: feed.region || null,
     funding: feed.funding || null,
     tags,
+    noise: isNoise({ title, summary }),
+    routine: isRoutine({ title }),
     publishedAt: published,
     firstSeenAt: nowIso,
   };

@@ -1,5 +1,13 @@
 import { createHash } from 'node:crypto';
-import { TOPIC_RULES } from '../feeds.mjs';
+import {
+  TOPIC_RULES,
+  NOISE_RULES,
+  ROUTINE_RULES,
+  ROUTINE_SUMMARY_RULES,
+  FOCUS_SECTIONS,
+  FOCUS_WEIGHTS,
+  GEO_TAGS,
+} from '../feeds.mjs';
 
 /** Query params that identify a campaign/referrer, never the article itself. */
 const TRACKING_PARAMS = [
@@ -98,12 +106,15 @@ const BOILERPLATE = [
   /Continue reading\.*$/i,
   /Read (the full story|more)( here)?\.*$/i,
   /^\s*(Reuters|AP|AFP)\s*[-–—]\s*/i,
-  /\[…\]\s*$/,
+  /\[\s*(…|\.\.\.|&hellip;)\s*\]\s*$/,
   /^\s*<?p>?\s*$/i,
 ];
 
 export function cleanSummary(summary, title) {
   let text = String(summary || '').trim();
+  // Some wires ship JSON-escaped copy, so quotes arrive as \" and render as
+  // literal backslashes on the card.
+  text = text.replace(/\\(["'])/g, '$1');
   for (const re of BOILERPLATE) text = text.replace(re, '').trim();
 
   // Several feeds set description === title; that's noise, not a summary.
@@ -192,13 +203,49 @@ export function clusterItems(items) {
   return clusters.map((c) => c.members);
 }
 
+/** True if a story matches the sport/entertainment/lifestyle demotion rules. */
+export function isNoise(item) {
+  const haystack = `${item.title} ${item.summary || ''}`;
+  return NOISE_RULES.some((re) => re.test(haystack));
+}
+
+/** True for recurring columns, round-ups and routine advisory bulletins. */
+export function isRoutine(item) {
+  // Title rules are broad; summary rules are narrow. A round-up's body often
+  // names the stories it covers, so matching general prose against the summary
+  // would demote the real coverage along with the digest.
+  if (ROUTINE_RULES.some((re) => re.test(item.title))) return true;
+  return ROUTINE_SUMMARY_RULES.some((re) => re.test(item.summary || ''));
+}
+
 /**
- * Rank a story. Recency dominates, cross-source coverage is the next strongest
- * signal, then the source's editorial weight.
+ * Rank a story.
+ *
+ * Cross-source corroboration is the strongest importance signal available
+ * without an LLM — several independent desks choosing the same story is an
+ * editorial judgement we get for free — so it outweighs recency here. Recency
+ * used to dominate, which made the page an expensive reverse-chronological
+ * list: whatever a wire filed twenty minutes ago led, regardless of weight.
+ *
+ * `focus` and `noise` encode what this brief is for. Both are deliberately
+ * modest: they reorder the page, they do not decide what is on it.
  */
 export function scoreItem(item, clusterSize, weight, now) {
   const ageHours = Math.max(0, (now - new Date(item.publishedAt).getTime()) / 3_600_000);
   const recency = Math.exp(-ageHours / 36); // ~half-life of a day and a half
   const coverage = Math.log2(1 + clusterSize);
-  return recency * 2 + coverage * 1.5 + (weight - 1);
+
+  let focus = FOCUS_WEIGHTS[item.section] || 0;
+  // Tags are what lift a *general* outlet's Ukraine or Taiwan story out of the
+  // world section's wildfire-and-typhoon baseline, so they matter as much as the
+  // section does.
+  const geoHits = (item.tags || []).filter((t) => GEO_TAGS.has(t)).length;
+  focus += Math.min(geoHits, 2) * 0.5;
+
+  // Off-topic never demotes a specialist section: "ransomware hits Premier
+  // League club" is a cyber story that happens to mention football.
+  const offTopic = item.noise && !FOCUS_SECTIONS.has(item.section) ? 1.6 : 0;
+  const routine = item.routine ? 1.1 : 0;
+
+  return recency * 1.6 + coverage * 1.8 + (weight - 1) + focus - offTopic - routine;
 }
