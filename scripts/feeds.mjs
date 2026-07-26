@@ -101,13 +101,9 @@ export const FEEDS = [
     section: 'geopolitics',
     weight: 1.3,
   },
-  {
-    id: 'lawfare',
-    name: 'Lawfare',
-    url: 'https://www.lawfaremedia.org/feeds/all.rss',
-    section: 'geopolitics',
-    weight: 1.2,
-  },
+  // Lawfare and CFR were both dropped after verification: Lawfare returns 403
+  // to any non-browser user agent on every feed path, and the only live CFR
+  // feed redirects to their podcast. Neither is worth spoofing a browser for.
   {
     id: 'the-diplomat',
     name: 'The Diplomat',
@@ -119,14 +115,7 @@ export const FEEDS = [
   {
     id: 'csis',
     name: 'CSIS',
-    url: 'https://www.csis.org/analysis/feed',
-    section: 'geopolitics',
-    weight: 1.1,
-  },
-  {
-    id: 'cfr',
-    name: 'Council on Foreign Relations',
-    url: 'https://www.cfr.org/rss/all',
+    url: 'https://www.csis.org/rss.xml',
     section: 'geopolitics',
     weight: 1.1,
   },
@@ -160,16 +149,26 @@ export const FEEDS = [
     section: 'defense',
     weight: 1.1,
   },
+  // Military.com and Janes both 404 on every documented feed path — replaced
+  // with these three, which were verified against the parser before adding.
   {
-    id: 'military-com',
-    name: 'Military.com',
-    url: 'https://www.military.com/rss/news',
+    id: 'defensescoop',
+    name: 'DefenseScoop',
+    url: 'https://defensescoop.com/feed/',
     section: 'defense',
+    weight: 1.2,
   },
   {
-    id: 'janes',
-    name: 'Janes',
-    url: 'https://www.janes.com/feeds/news',
+    id: 'naval-news',
+    name: 'Naval News',
+    url: 'https://www.navalnews.com/feed/',
+    section: 'defense',
+    weight: 1.1,
+  },
+  {
+    id: 'twz',
+    name: 'The War Zone',
+    url: 'https://www.twz.com/feed',
     section: 'defense',
     weight: 1.1,
   },
@@ -231,7 +230,20 @@ export const FEEDS = [
   {
     id: 'ars-security',
     name: 'Ars Technica Security',
-    url: 'https://feeds.arstechnica.com/arstechnica/security',
+    url: 'https://arstechnica.com/security/feed/',
+    section: 'cyber',
+  },
+  {
+    id: 'cyberscoop',
+    name: 'CyberScoop',
+    url: 'https://cyberscoop.com/feed/',
+    section: 'cyber',
+    weight: 1.2,
+  },
+  {
+    id: 'help-net-security',
+    name: 'Help Net Security',
+    url: 'https://www.helpnetsecurity.com/feed/',
     section: 'cyber',
   },
 ];

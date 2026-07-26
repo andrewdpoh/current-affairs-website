@@ -32,27 +32,17 @@ jobs:
         # and that must not block unrelated work. Read the log to see which.
         run: npm run fetch -- --dry-run
 
-      # TEMPORARY: probing replacements for the feeds that came back dead.
+      # TEMPORARY: backfilling the Analysis section after dropping Lawfare/CFR.
       - name: Probe candidate replacements
         run: |
           npm run probe -- \
-            https://www.france24.com/en/rss \
-            https://www.france24.com/en/france/rss \
-            https://www.lawfaremedia.org/feed/ \
-            https://www.lawfaremedia.org/rss.xml \
-            https://www.csis.org/rss.xml \
-            https://www.csis.org/analysis/rss \
-            https://www.cfr.org/rss.xml \
-            https://feeds.cfr.org/publication \
-            "https://www.military.com/rss-feeds/content?keyword=&type=news" \
-            https://arstechnica.com/security/feed/ \
-            https://feeds.arstechnica.com/arstechnica/index \
-            https://www.nato.int/cps/en/natohq/news.rss \
-            https://defensescoop.com/feed/ \
-            https://www.navalnews.com/feed/ \
-            https://www.twz.com/feed \
-            https://cyberscoop.com/feed/ \
-            https://www.helpnetsecurity.com/feed/ \
-            https://therecord.media/feed \
-            https://www.reuters.com/arc/outboundfeeds/rss/ \
-            https://apnews.com/hub/world-news.rss
+            https://www.brookings.edu/feed/ \
+            https://carnegieendowment.org/rss/publications.xml \
+            https://responsiblestatecraft.org/feed/ \
+            https://thebulletin.org/feed/ \
+            https://www.rand.org/news/press.xml \
+            https://www.chathamhouse.org/rss/publications \
+            https://www.iiss.org/rss/analysis \
+            https://foreignaffairs.com/rss.xml \
+            https://www.economist.com/international/rss.xml \
+            https://www.france24.com/en/rss
