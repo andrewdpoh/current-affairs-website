@@ -31,3 +31,28 @@ jobs:
         # Never fails the build on a single dead feed — publishers change URLs
         # and that must not block unrelated work. Read the log to see which.
         run: npm run fetch -- --dry-run
+
+      # TEMPORARY: probing replacements for the feeds that came back dead.
+      - name: Probe candidate replacements
+        run: |
+          npm run probe -- \
+            https://www.france24.com/en/rss \
+            https://www.france24.com/en/france/rss \
+            https://www.lawfaremedia.org/feed/ \
+            https://www.lawfaremedia.org/rss.xml \
+            https://www.csis.org/rss.xml \
+            https://www.csis.org/analysis/rss \
+            https://www.cfr.org/rss.xml \
+            https://feeds.cfr.org/publication \
+            "https://www.military.com/rss-feeds/content?keyword=&type=news" \
+            https://arstechnica.com/security/feed/ \
+            https://feeds.arstechnica.com/arstechnica/index \
+            https://www.nato.int/cps/en/natohq/news.rss \
+            https://defensescoop.com/feed/ \
+            https://www.navalnews.com/feed/ \
+            https://www.twz.com/feed \
+            https://cyberscoop.com/feed/ \
+            https://www.helpnetsecurity.com/feed/ \
+            https://therecord.media/feed \
+            https://www.reuters.com/arc/outboundfeeds/rss/ \
+            https://apnews.com/hub/world-news.rss

@@ -10,6 +10,7 @@
   },
   "scripts": {
     "fetch": "node scripts/fetch-news.mjs",
+    "probe": "node scripts/probe-feeds.mjs",
     "test": "node scripts/test.mjs",
     "seed": "node scripts/dev-seed.mjs",
     "seed:clear": "node scripts/dev-seed.mjs --clear",
