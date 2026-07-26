@@ -146,9 +146,15 @@ across outlets, and cluster size feeds the ranking. A story carried by six outle
 hours outranks one carried by one outlet yesterday. This is the best importance signal available
 without paying for an LLM.
 
-**State-funded outlets are labelled.** Al Jazeera, CNA, DW, France 24 and others carry a
-`state-funded` tag. Not a quality judgement — it is context worth having on the page when you are
-reading for geopolitical signal, and it is a reason to keep them rather than drop them.
+**State-funded outlets are labelled.** Al Jazeera, CNA, DW and NPR carry a `state-funded` or
+`public` tag. Not a quality judgement — it is context worth having on the page when you are reading
+for geopolitical signal, and it is a reason to keep them rather than drop them.
+
+**Sources are verified, not assumed.** Seven of the first thirty feeds were already dead — a 23%
+failure rate on URLs that all looked plausible. Every source in the registry has been fetched and
+parsed successfully in CI. Two publishers (Lawfare, France 24) were dropped rather than worked
+around: both block automated clients, and getting past that would mean impersonating a browser,
+which is the publisher's call to make.
 
 **Third-party text is never trusted.** Feed content is written to the DOM with `textContent`, never
 `innerHTML`. URLs are canonicalized server-side and anything that isn't `http(s)` is dropped, so a
