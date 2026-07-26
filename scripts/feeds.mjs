@@ -55,13 +55,11 @@ export const FEEDS = [
     section: 'world',
     funding: 'state',
   },
-  {
-    id: 'france24',
-    name: 'France 24',
-    url: 'https://www.france24.com/en/rss',
-    section: 'world',
-    funding: 'state',
-  },
+  // France 24 was dropped: it serves a bot-check HTML page to repeated
+  // automated requests, so it failed most scheduled runs even though a
+  // one-off probe succeeds. Getting past that would mean impersonating a
+  // browser, which is the publisher's decision to make, not ours. Deutsche
+  // Welle covers the same continental-European angle reliably.
   {
     id: 'cna',
     name: 'CNA',
