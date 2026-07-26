@@ -70,7 +70,11 @@ jobs:
             exit 1
           fi
 
+      # enablement:true provisions the Pages site on first run, so the repo
+      # configures itself rather than requiring a manual visit to Settings.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
