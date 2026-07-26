@@ -83,6 +83,35 @@ In `public/assets/app.js`: `SECTION_CAPS` is how many stories each section shows
 before a click, and `TOP_QUOTAS` fixes the section mix of Top Stories. Together
 they take the first screen from ~640 cards to ~50.
 
+## Design
+
+The palette lives entirely in custom properties at the top of
+`public/assets/styles.css`. Three token blocks carry it: dark (the default),
+`:root[data-theme="light"]`, and the same light values again under
+`@media (prefers-color-scheme: light)` for `data-theme="auto"`. Change a colour
+in one and you must change it in all three.
+
+- **Contrast is deliberately not maximal.** Body text is ~11:1 on dark and
+  ~10:1 on light, down from 15.6:1 and 16.3:1. Near-white on near-black is glare
+  over a long read. Do not "fix" this by darkening the ground or brightening the
+  ink — it was measured, not guessed.
+- **But AA is a floor.** Every text token clears WCAG AA (4.5:1) on its own
+  ground; `--text` and `--accent` clear AAA. The previous light theme's muted
+  tone failed at 3.84:1, which is what prompted checking. If you retune, verify
+  the ratios rather than eyeballing them.
+- **Neutrals are blue-biased, not warm.** This is a situation report, not a
+  literary quarterly, and warm-cream-plus-serif is the single most over-used
+  look in generated design. The bias also ties the greys to the accent.
+- **`--shell` (1180px) is the page frame; `--measure` (62ch) is one story's
+  reading width.** They are separate so the frame can use a desktop screen while
+  lines stay short. 1560px gave three columns and read as a wall of text.
+- **Summaries are line-clamped** (4 lines in the grid, 5 on the lead). Grid rows
+  take the height of their tallest card, so one long excerpt punches a hole
+  beside it. These are publisher excerpts, not the article.
+- **System fonts only**, per the no-third-party-requests rule above. Do not add
+  `@font-face`, including as a data URI — it defeats the instant first paint that
+  makes this feel fast.
+
 ## Ranking
 
 There is no model here; ranking is arithmetic over four signals in `scoreItem`:

@@ -10,17 +10,18 @@
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   /* --shell is the page frame; --measure is the reading width of one story.
-     They are separate on purpose: the frame can be wide enough to use a
-     desktop screen while each column stays inside a comfortable line length.
-     A single 74ch column on a 1440px display wasted most of the viewport; a
-     single 140ch column would be worse, because nobody can track a line that
-     long. The answer is columns, not a wider paragraph. */
-  --shell: 1560px;
-  --measure: 68ch;
-  --card-min: 27rem;
+     They are separate on purpose: the frame is wide enough to use a desktop
+     screen while each column stays inside a comfortable line length.
+
+     1560px gave three columns and read as a wall of text edge to edge. 1180
+     gives two, and on a wide display leaves a real margin either side — which
+     is what makes a long page of headlines restful rather than relentless. */
+  --shell: 1180px;
+  --measure: 62ch;
+  --card-min: 25rem;
   --radius: 10px;
   --radius-sm: 6px;
-  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --gutter: clamp(1.25rem, 5vw, 3.5rem);
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -28,75 +29,86 @@
 /* Dark is the default: this is a thing you read early and late. */
 :root,
 :root[data-theme="dark"] {
-  --bg: #0f1115;
-  --bg-elevated: #161920;
-  --surface: #1a1e27;
-  --surface-hover: #1f2430;
-  --border: #262b36;
-  --border-strong: #333a49;
+  /* Softened deliberately. Near-white on near-black measured 15.6:1, which is
+     glare rather than legibility over a long read; this is 11:1, and every
+     token below still clears WCAG AA on this ground. The neutrals carry a
+     slight blue bias toward the accent so they read as chosen, not defaulted. */
+  --bg: #181b22;
+  --bg-elevated: #1e222b;
+  --surface: #1e222b;
+  --surface-hover: #242935;
+  --border: #272c36;
+  --border-strong: #343a47;
 
-  --text: #e7e9ee;
-  --text-secondary: #b3bac7;
-  --text-muted: #7c8698;
+  --text: #c9cfda;
+  --text-secondary: #949cab;
+  --text-muted: #7d8698;
 
-  --accent: #7aa2f7;
-  --accent-soft: rgba(122, 162, 247, 0.14);
+  --accent: #8fb0f0;
+  --accent-soft: rgba(143, 176, 240, 0.12);
 
-  --sec-top: #e0af68;
-  --sec-cyber: #56d4a0;
-  --sec-defense: #7aa2f7;
-  --sec-geopolitics: #bb9af7;
-  --sec-world: #6cc5d9;
+  --sec-top: #d3ab74;
+  --sec-cyber: #6cc4a0;
+  --sec-defense: #8fb0f0;
+  --sec-geopolitics: #b39ae0;
+  --sec-world: #74b8c6;
 
-  --danger: #f7768e;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --danger: #e88b9d;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.32), 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
+/* Cool document stock rather than warm cream: this is a situation report, not a
+   literary quarterly, and the old #7a7f8b muted tone failed AA on cream at
+   3.84:1. */
 :root[data-theme="light"] {
-  --bg: #fbfaf8;
+  --bg: #f2f4f7;
   --bg-elevated: #ffffff;
   --surface: #ffffff;
-  --surface-hover: #f4f2ee;
-  --border: #e3e0d9;
-  --border-strong: #cfcbc1;
+  --surface-hover: #e9edf3;
+  --border: #dde2ea;
+  --border-strong: #c5cdd9;
 
-  --text: #1b1c20;
-  --text-secondary: #4a4e58;
-  --text-muted: #7a7f8b;
+  --text: #363b45;
+  --text-secondary: #525a68;
+  --text-muted: #656c7a;
 
-  --accent: #2f5fd0;
-  --accent-soft: rgba(47, 95, 208, 0.1);
+  --accent: #3c62c4;
+  --accent-soft: rgba(60, 98, 196, 0.09);
 
-  --sec-top: #a86a12;
-  --sec-cyber: #12795a;
-  --sec-defense: #2f5fd0;
-  --sec-geopolitics: #6c3fc4;
-  --sec-world: #14707f;
+  --sec-top: #9a6a1f;
+  --sec-cyber: #1c7358;
+  --sec-defense: #3c62c4;
+  --sec-geopolitics: #6746ba;
+  --sec-world: #1d6b78;
 
-  --danger: #c62d42;
-  --shadow: 0 1px 2px rgba(30, 25, 15, 0.06), 0 8px 24px rgba(30, 25, 15, 0.07);
+  --danger: #c04256;
+  --shadow: 0 1px 2px rgba(28, 34, 48, 0.05), 0 8px 22px rgba(28, 34, 48, 0.06);
 }
 
 @media (prefers-color-scheme: light) {
   :root[data-theme="auto"] {
-    --bg: #fbfaf8;
+    --bg: #f2f4f7;
     --bg-elevated: #ffffff;
     --surface: #ffffff;
-    --surface-hover: #f4f2ee;
-    --border: #e3e0d9;
-    --border-strong: #cfcbc1;
-    --text: #1b1c20;
-    --text-secondary: #4a4e58;
-    --text-muted: #7a7f8b;
-    --accent: #2f5fd0;
-    --accent-soft: rgba(47, 95, 208, 0.1);
-    --sec-top: #a86a12;
-    --sec-cyber: #12795a;
-    --sec-defense: #2f5fd0;
-    --sec-geopolitics: #6c3fc4;
-    --sec-world: #14707f;
-    --danger: #c62d42;
-    --shadow: 0 1px 2px rgba(30, 25, 15, 0.06), 0 8px 24px rgba(30, 25, 15, 0.07);
+    --surface-hover: #e9edf3;
+    --border: #dde2ea;
+    --border-strong: #c5cdd9;
+
+    --text: #363b45;
+    --text-secondary: #525a68;
+    --text-muted: #656c7a;
+
+    --accent: #3c62c4;
+    --accent-soft: rgba(60, 98, 196, 0.09);
+
+    --sec-top: #9a6a1f;
+    --sec-cyber: #1c7358;
+    --sec-defense: #3c62c4;
+    --sec-geopolitics: #6746ba;
+    --sec-world: #1d6b78;
+
+    --danger: #c04256;
+    --shadow: 0 1px 2px rgba(28, 34, 48, 0.05), 0 8px 22px rgba(28, 34, 48, 0.06);
   }
 }
 
@@ -425,7 +437,7 @@ button {
 }
 
 .section {
-  margin-bottom: 2.4rem;
+  margin-bottom: 2.9rem;
 }
 
 /* The whole desktop layout is this one rule. auto-fill with a min column width
@@ -471,14 +483,16 @@ button {
   margin-bottom: 0.6rem;
 }
 .section--top .section__grid > .card:first-child .card__title {
-  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
-  line-height: 1.16;
-  letter-spacing: -0.022em;
-  max-width: 34ch;
+  font-size: clamp(1.45rem, 2.4vw, 1.95rem);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  max-width: 30ch;
 }
 .section--top .section__grid > .card:first-child .card__summary {
-  font-size: 1.06rem;
-  max-width: var(--measure);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 56ch;
+  -webkit-line-clamp: 5;
 }
 .section--top .section__grid > .card:first-child:hover {
   background: transparent;
@@ -494,9 +508,15 @@ button {
   /* Matches the cards' inner padding so the heading and the headlines below it
      sit on the same left edge. */
   padding-inline: 0.9rem;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.9rem;
+  padding-bottom: 0.55rem;
+  margin-bottom: 1rem;
+  /* The section's colour lives in this rule rather than in a bar beside the
+     title: it identifies the section just as well and reads as a document
+     divider instead of a decorated card. */
+  /* Fallback first: an unsupported color-mix() invalidates the whole
+     declaration, which would drop the rule rather than degrade it. */
   border-bottom: 1px solid var(--border);
+  border-bottom-color: color-mix(in srgb, var(--section-color, var(--border)) 34%, var(--border));
 }
 
 .section__title {
@@ -506,13 +526,7 @@ button {
   font-family: var(--serif);
   font-size: 1.18rem;
   letter-spacing: -0.01em;
-}
-.section__title::before {
-  content: "";
-  width: 3px;
-  height: 0.95em;
-  border-radius: 2px;
-  background: var(--section-color, var(--accent));
+  text-wrap: balance;
 }
 
 .section__count {
@@ -562,7 +576,9 @@ button {
 }
 .card:hover {
   background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   border-color: var(--border);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
 }
 .card.is-selected {
   background: var(--surface);
@@ -596,8 +612,9 @@ button {
   font-family: var(--serif);
   font-size: 1.24rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.32;
   letter-spacing: -0.013em;
+  text-wrap: balance;
   color: var(--text);
 }
 
@@ -618,10 +635,18 @@ button {
   grid-column: 1;
   min-width: 0;
   overflow-wrap: anywhere;
-  margin: 0.4rem 0 0;
+  margin: 0.45rem 0 0;
   font-size: 1rem;
-  line-height: 1.52;
+  line-height: 1.62;
+  max-width: var(--measure);
   color: var(--text-secondary);
+  /* Grid rows take the height of their tallest card, so one long excerpt leaves
+     a hole beside it. Clamping evens the rows and shortens the page. These are
+     publisher excerpts, not the article — the full piece is one click away. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
 }
 
 .card__meta {
